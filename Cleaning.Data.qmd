@@ -1,0 +1,323 @@
+---
+title: "Leaning Crash Report Data"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAkCAYAAAD7PHgWAAACfElEQVR4Xu1XS4wMQRj+4xUuXokI4cCBixAOXMQj8bg5EG5CJDiJk3CyXEhEBBtdVTObcbYhwlHitMGNSEZCkM2amfp7DJM9eYTd8Ve37en+q+ySrZ6L/pIv3V319f9/Xe8GKFCgwP8K1ZkNQh8AiRVQ+JKubeJPEPiRyp/Q/RUQjY38td5A4FGQYZ1MdP6Cj3tn9PbwXEp4x2FiKv6gDzrNw/nFYHUOSP3Ikfwf2NzAw/qDwKt2woivqe4CBOE+uu6AUriLxuQRKhfE0Yw2aK7nYf3AjCGJY8zYF5oMJ6GvM4PLE/S3lpPuGRlugArP8Wp/kPiQmfsOJdzOZb2BwoMZCn0YzPKRNqjwTOYd04pSb6OJcApEeIy6e3Wm3ivsMcb5hgzNSvSl+hoqe840YzQeg2hieYdtiFGfSLQVXEJlNVuTsJKK7Al2kjS/wc3P87tafcmhSXPc/9JiJ+lS4YOsNnxhaTj5eJ02gpFFf6TZSdJQ+NYyZPNioi+Hq+j5PVFDvHdPsPW7fCgV3QNkeN9hKEuBh7p6PGvVZzmSiu4BsrnbkSTND3CtNq+rx6pDk6NBA4V9jkSGbdo9tiQ6ofc6NJw5GDRQek80geJxVKX7frjVWJnURwcNa60cgrjLJ3g+3+1wMkh93Wotc6jIBQO1xVELSbwXzcrJYFpO6BuWOYlPudQfpB5IJRolA5fJ8E5QrWW0DC2MP6CxKeouicMOc19pv17Hw/rD9A6t49HvQq4QuJkSfXIkn4r0Q6WP83D5oFxfQd16N2oR24iLr6jbt/Iw+cMc4eNJ8M5hqhV/hN4Pg52Z/NXeQ7UXQNBYG7HcXMqrCxQokBN+ATvFW9Xz98qwAAAAAElFTkSuQmCC
+author: "Ava Haghighi"
+format: html
+editor: visual
+---
+
+## Data cleaning 
+Data cleaning has been performed on the main dataset for the project 'Crash Report,' which contains driver data for Montgomery County. The cleaning process includes grouping, categorizing, and transforming the relevant variables into a more readable format for better understanding and analysis.
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = "C:/Users/ava/Downloads/Data 205/final project/data 205 final project")
+
+```
+
+```{r Dataset}
+crashreport <- read.csv("CrashReporting2.csv")
+```
+
+```{r libraries}
+# Load libraries
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(summarytools)
+library(psych)
+library(stringr)
+library(lubridate)
+library(corrplot)
+
+```
+
+```{r Na: Charactors }
+crashreport <- crashreport %>%
+  # Replacing unwanted values in character columns with NA
+  mutate(across(where(is.character), 
+                ~ na_if(., " "))) %>% 
+   mutate(across(where(is.character), 
+                ~ na_if(., ""))) %>%
+  mutate(across(where(is.character), 
+                ~ na_if(., "N/A"))) %>%
+  mutate(across(where(is.character), 
+                ~ na_if(., "NULL"))) %>%
+  mutate(across(where(is.character), 
+                ~ na_if(., "Unknown"))) %>%
+  mutate(across(where(is.character), 
+                ~ na_if(., "UNKNOWN")))
+```
+
+```{r NA : Parked.vehicle}
+#this chunk checks for any missing (NA) values in the Parked.Vehicle column, and replaces them with "No", leaving other values unchanged.
+
+crashreport <- crashreport %>%
+  mutate(Parked.Vehicle = ifelse(is.na(Parked.Vehicle), "No", Parked.Vehicle))
+
+```
+
+The following code converts the Date column, which indicates the date of the accident, into a variable called 'Date' using the Lubridate package, in the format of month, day, and year.
+
+```{r Date }
+# Converting character dates to Date objects
+crashreport$CrashDate <- mdy(crashreport$CrashDate)
+
+str(crashreport$CrashDate)
+# cheaking the strcture of it 
+head(crashreport$CrashDate)
+
+```
+
+This code creates or modifies a column called Related.Non.Motorist in the crash report dataset. It should be noted that, in the future, any crashes related to vehicles, bicyclists, and scooters will fall under one category.
+
+```{r clean Related none- motorists }
+#This code creates or modifies column called Related.Non.Motorist in the crash report 
+crashreport<- crashreport%>%
+  mutate(Related.Non.Motorist = case_when(
+    grepl("pedestrian", Related.Non.Motorist, ignore.case = TRUE) ~ "Pedestrian", # only vehicles and Pedestrians 
+    grepl("bicyclist|cyclist|scooter", Related.Non.Motorist, ignore.case = TRUE) ~ "Bicyclist and Scooters", # Bicycles and Scooters 
+    grepl("wheelchair|other conveyance", Related.Non.Motorist, ignore.case = TRUE) ~ "Motorized Devices", # others 
+    TRUE ~ "Other"
+  ))
+```
+
+The following code Ths categorizes the Vehicle.Body.Type column in the dataset by using the grepl() function.
+
+```{r  Vehicle Body Type }
+crashreport <- crashreport %>%
+  mutate(Vehicle.Body.Type  = case_when(
+    grepl("PASSENGER|SCHOOL BUS|VAN|STATION WAGON|RECREATIONAL VEHICLE|MOPED|LIMOUSINE", Vehicle.Body.Type , ignore.case = TRUE) ~ "Passenger Vehicles",
+    grepl("CARGO VAN|PICKUP TRUCK|FIRE VEHICLE|POLICE VEHICLE|AMBULANCE|TRUCK TRACTOR|CONSTRUCTION EQUIPMENT", Vehicle.Body.Type, ignore.case = TRUE) ~ "Commercial/Utility Vehicles",
+    grepl("MOTORCYCLE|AUTOCYCLE|MOPED|SNOWMOBILE|ATV|RECREATIONAL VEHICLE", Vehicle.Body.Type , ignore.case = TRUE) ~ "Motorcycles and Recreational Vehicles",
+    grepl("BUS|SCHOOL BUS|TRANSIT BUS|CROSS COUNTRY BUS|OTHER BUS|MINI", Vehicle.Body.Type , ignore.case = TRUE) ~ "Buses",
+    TRUE ~ "Other"
+  ))
+```
+
+The following code creates Injury_Group, in the crashreport dataset by categorizing the Injury.Severity values into four groups: "No Injury", "Minor Injury", "Serious Injury", and "Fatal Injury", based on specific severity terms. Any unclassified or missing values are grouped as "Other".
+
+```{r Injury Severity }
+crashreport <- crashreport %>%
+  mutate(Injury_Group = case_when(
+    Injury.Severity %in% c("NO APPARENT INJURY", "No Apparent Injury") ~ "No Injury",
+    Injury.Severity %in% c("SUSPECTED MINOR INJURY", "Suspected Minor Injury", "Possible Injury") ~ "Minor Injury",
+    Injury.Severity %in% c("SUSPECTED SERIOUS INJURY", "Suspected Serious Injury") ~ "Serious Injury",
+    Injury.Severity == "FATAL INJURY" ~ "Fatal Injury",
+    TRUE ~ "Other"  
+  ))
+
+```
+
+The following chunks categorizes the Surface Condition variable into groups such as "Dry", "Wet", "Snow and Ice", and "Other Surface Types" based on specific keywords. Also the Light variable into groups such as "Daylight", "Dawn and Dusk", "Dark with Lights", "Dark, No Lights", and "Unspecified/Other" based on specific lighting
+
+```{r Grouped surface condition}
+
+crashreport$Surface_Condition_Grouped <- case_when(
+  crashreport$Surface.Condition.1 %in% c("DRY", "Dry") ~ "Dry",
+  crashreport$Surface.Condition.1 %in% c("WET", "Wet", "Water (standing, moving)", "WATER(STANDING/MOVING)") ~ "Wet",
+  crashreport$Surface.Condition.1 %in% c("SNOW", "Snow", "ICE", "Ice/Frost", "Slush", "Slush", "SAND") ~ "Snow and Ice",
+  crashreport$Surface.Condition.1 %in% c("MUD, DIRT, GRAVEL", "OIL", "Other", "OTHER", "UNKNOWN") ~ "Other Surface Types",
+  TRUE ~ NA_character_  # Handles other values 
+)
+
+
+```
+
+```{r Grouped Lighting }
+
+crashreport$Lighting.Condition <- case_when(
+  crashreport$Light.1 %in% c("DAYLIGHT", "Daylight") ~ "Daylight",
+  crashreport$Light.1 %in% c("DAWN", "Dawn", "DUSK", "Dusk") ~ "Dawn and Dusk",
+  crashreport$Light.1 %in% c("DARK LIGHTS ON", "Dark - Lighted") ~ "Dark with Lights",
+  crashreport$Light.1 %in% c("DARK NO LIGHTS", "Dark - Not Lighted") ~ "Dark, No Lights",
+  crashreport$Light.1 %in% c("DARK -- UNKNOWN LIGHTING", "Dark - Unknown Lighting", "OTHER", "Other") ~ "Unspecified/Other",
+  TRUE ~ NA_character_
+)
+
+```
+ same process for variable "weather"
+```{r weather }
+
+crashreport <- crashreport %>%
+  mutate(
+    Weather = case_when(
+      Weather %in% c("Clear", "CLEAR", "Cloudy", "CLOUDY") ~ "Clear",
+      Weather %in% c("Fog, Smog, Smoke", "FOGGY") ~ "Fog",
+      Weather %in% c("BLOWING SAND, SOIL, DIRT", "SEVERE WINDS", "Severe Crosswinds") ~ "Wind",
+      Weather %in% c(
+        "Blowing Snow", "BLOWING SNOW", 
+        "Freezing Rain Or Freezing Drizzle", 
+        "SLEET", "Snow", "SNOW", "WINTRY MIX"
+      ) ~ "Snow",
+      Weather %in% c("Rain", "RAINING") ~ "Rain",
+      TRUE ~ NA_character_   )
+  )
+
+```
+
+
+The following chunk groups vehicle makes
+```{r Vehicle make }
+crashreport <- crashreport %>%
+  mutate(
+    Vehicle.Make = case_when(
+      Vehicle.Make %in% c("TOYT", "TOYOT", "TOYOATA", "TOTOYA") ~ "TOYOTA",
+      Vehicle.Make %in% c("HYUNDAI", "HUNDA", "HONDVAL1992", "HONDAA") ~ "HONDA",
+      Vehicle.Make %in% c("NISAN", "NISS", "NISSON") ~ "NISSAN",
+      Vehicle.Make %in% c("VOLKS", "VOLKSWAGON", "VOLKWAGON", "VOLKSAWAGON") ~ "VOLKSWAGEN",
+      Vehicle.Make %in% c("MERCERDEZ", "MERCEDEZ", "MERCEDES", "MERCEDES BENZ", 
+                            "MERC EDES", "MERZEDEZ") ~ "MERCEDES",
+      Vehicle.Make %in% c("HYUNDA", "HYUNDAI", "HYUNADAI", "HYU") ~ "HYUNDAI",
+      Vehicle.Make %in% c("CHEVROLET", "CHEVY4DR", "CHEVVORLET") ~ "CHEVROLET",
+      Vehicle.Make %in% c("DOGDE", "DOGDGE") ~ "DODGE",
+      Vehicle.Make %in% c("FRIEGHTLINER", "FRIGHTLNR", "FREIGHTLNER") ~ "FRELIGHTLINER",
+      Vehicle.Make %in% c("JEEPVAL2013", "JEEO") ~ "JEEP",
+      Vehicle.Make %in% c("MINI COOP", "MINI COOPER") ~ "MINI",
+      Vehicle.Make %in% c("KAWASAKI") ~ "KAWASAKI",
+      Vehicle.Make %in% c("SUBURU", "SUBA") ~ "SUBARU",
+      Vehicle.Make %in% c("SUSUKI", "SUZUKI") ~ "SUZUKI",
+      Vehicle.Make %in% c("INFINIT", "INFINTI") ~ "INFINITI",
+      Vehicle.Make %in% c("CADILAC", "CADILACC") ~ "CADILLAC",
+      Vehicle.Make %in% c("TESL", "TELSA") ~ "TESLA",
+      Vehicle.Make %in% c("RANG ROVER", "LANDROVER") ~ "LANDROVER",
+      TRUE ~ NA 
+    )
+  )
+
+
+```
+
+
+
+The following codes defines a vector ev_lists containing model names of electric vehicles (EVs) that are mentioned in the variable vehicle model New column is created called Vehicle_Type in the crashreport dataset, categorizing vehicles as "EV" if the Vehicle.Model matches any value in ev_lists, or "Non-EV" otherwise.
+
+```{r EV list}
+ev_lists <- c("TESLA", "MODEL 3", "MODEL X", "MODEL Y", "MODEL S", "LEAF", "EV", 
+               "ELECTRIC", "ION", "SPARK", "HORIZON ELEC SCOOTER", "EV", "NIRO PLUG", 
+               "NIRO", "ARIYA") 
+```
+
+```{r Vehicle Type}
+crashreport <- crashreport %>%
+  mutate(
+    Vehicle_Type = ifelse(Vehicle.Model %in% ev_lists, "EV", "Non-EV")  # Checks if Vehicle Model matches any in ev_list
+  )
+```
+The following code groups the Driver.Distracted.By variable to show the main sources of distraction for the drivers. Because among all "Look but did not see" has the highest count it is grouped speratly. 
+```{r table of Distractions grouped }
+table(crashreport$Driver.Distracted.By.1)
+```
+
+
+```{r  Driver Distracted By}
+
+crashreport <- crashreport %>%
+  mutate(Distraction.group = case_when(
+    # Group 1: Not Distracted
+    Driver.Distracted.By %in% c("NOT DISTRACTED", "Not Distracted") ~ "Not Distracted",
+    
+    # Group 2: Distractions from Other Occupants
+    Driver.Distracted.By %in% c("BY OTHER OCCUPANTS", "DISTRACTED BY OUTSIDE PERSON OBJECT OR EVENT", "BY MOVING OBJECT IN VEHICLE") ~ "Distractions from Other Occupants",
+    
+    # Group 3: Using Devices
+    Driver.Distracted.By %in% c("USING DEVICE OBJECT BROUGHT INTO VEHICLE", 
+                       "OTHER ELECTRONIC DEVICE (NAVIGATIONAL PALM PILOT)", 
+                       "USING OTHER DEVICE CONTROLS INTEGRAL TO VEHICLE", 
+                       "OTHER CELLULAR PHONE RELATED", 
+                       "TALKING OR LISTENING TO CELLULAR PHONE", 
+                       "DIALING CELLULAR PHONE", 
+                       "TEXTING FROM A CELLULAR PHONE", 
+                       "Manually Operating (dialing, playing game, etc.)") ~ "Using Devices",
+    
+    # Group 4: Inattention or Lost in Thought
+    Driver.Distracted.By %in% c("INATTENTIVE OR LOST IN THOUGHT", "Other Action (looking away from task, etc.)", "Talking/listening") ~ "Inattention or Lost in Thought",
+    
+    # Group 5: Eating, Smoking, or Other Physical Distractions
+    Driver.Distracted.By %in% c("EATING OR DRINKING", "SMOKING RELATED") ~ "Eating, Smoking, or Other",
+    Driver.Distracted.By == "LOOKED BUT DID NOT SEE" ~ "Looked But Did Not See",
+    
+    #  for any other cases
+    TRUE ~ "Other"
+  )) 
+ 
+```
+
+After grouping the variables, selecting them for a smaller dataframe, and changing the names for better convenience.
+
+
+```{r selected data}
+selected.Data <- crashreport %>%
+  select(
+    "Vehicle.Damage.Extent.1"  ,  "day_of_week" , "CrashDate", 
+    "Weather", "Surface_Condition_Grouped",  "Traffic.Control.1", 
+    "Vehicle.Body.Type.1", "Drivers.License.State", "Driver.Substance.Abuse", 
+    "time_of_day", "CrashTime", "Crash.Date.Time", "On_Off_Road.1", "Lighting.Condition" , 
+    "local_driver.1", "Vehicle.First.Impact.Location.1","Vehicle.Year",  "Vehicle.Make", "Vehicle.Model", "Vehicle_Type" , 
+    "Parked.Vehicle" , "Speed.Limit" , "Injury_Group" ,    "Distraction.group"  , 
+  ) %>%
+  rename_with(~ str_replace_all(., "\\.", " "), everything()) %>%  # Replace periods with spaces
+   rename_with(~ str_replace_all(., "1$", ""), everything()) %>% 
+  rename_with(~ str_to_title(.), everything())  # Capitalize the first letter of each word
+
+
+
+colnames(selected.Data)
+```
+```{r}
+unique(selected.Data$Weather)
+```
+
+```{r NA table dataframe }
+
+# Create a data frame for missing values
+missing_table <- data.frame(
+  Column = names(selected.Data),
+  Missing_Percentage = round(missing_percentage, 2)
+)
+
+# Filter rows where Missing_Percentage is greater than 0 and order them from high to low
+non_zero_missing_table <- missing_table %>%
+  filter(Missing_Percentage > 0) %>%
+  arrange(desc(Missing_Percentage)) %>%
+  head(5)
+
+# Print the ordered table
+print(non_zero_missing_table)
+
+
+```
+
+## what percentage of data is missing ?
+
+
+```{r}
+# Remove rows where Missing_Percentage is NA or outside the expected range
+top_10_missing_cleaned <- non_zero_missing_table%>%
+  filter(!is.na(Missing_Percentage) & Missing_Percentage >= 0)
+
+# Create the bar plot
+ggplot(top_10_missing_cleaned, aes(x = Column, y = Missing_Percentage)) +
+  geom_bar(stat = "identity", fill = "#f23d29") +  # Bar chart with a custom color
+  labs(
+    title = "Missing Data Percentage Per Variables ",
+    x = "Variables", 
+    y = "Percentage of Missing Data (%)"
+  ) +
+  theme_minimal() +  # A minimalistic theme for the plot
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 13, face = "bold", margin = margin(b = 20)),
+    axis.title.x = element_text(size = 12, margin = margin(t = 15)),
+    axis.title.y = element_text(size = 12, margin = margin(r = 15)),
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for readability
+  ) +
+  scale_y_continuous(limits = c(0, 100))  # Adjust the y-axis limits if necessary
+
+```
+
+```{r saved data}
+file_path <- "C:/Users/ava/Downloads/Data 205/final project/data 205 final project/cleaned_data.csv"
+
+# Use write.csv to save the data frame
+write.csv(selected.Data, file = file_path, row.names = FALSE)
+
+```
+

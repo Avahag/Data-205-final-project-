@@ -1,0 +1,202 @@
+---
+title: "EDA For Crash Report"
+author: "Ava Haghighi"
+format: html
+editor: visual
+---
+
+```{r loading librarys}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(summarytools)
+library(forcats)
+
+```
+
+```{r Imported data}
+
+setwd("C:/Users/ava/Downloads/Data 205/final project/data 205 final project")
+Data <-read.csv("cleaned_data.csv")
+```
+
+The table below presents the class and mode of each categorical variable in the cleaned dataset with the selected variables, as well as the five-number summary for the numeric variables.
+
+```{r Summary of Data}
+summary(Data)
+```
+
+In the following codesdata was grouped by Speed.Limit to calculate the number of accidents for each value.
+
+```{r Speedlimit group}
+#grouping data base on Speed Limit 
+speed_data <- Data %>%
+  group_by(Speed.Limit) %>%
+  summarise(Accident_count = n()) # counts for the accidents 
+print(speed_data)
+
+```
+
+Outliers were identified using the IQR method and excluded, and a bar chart was used to visualize the distribution of accidents, highlighting higher frequencies in ranges such as 25 and 35 mph.
+
+```{r Speed limit outliers }
+
+# Calculate IQR to identify outliers for Speed Limit
+Q1 <- quantile(speed_data$Speed.Limit, 0.25)
+Q3 <- quantile(speed_data$Speed.Limit, 0.75)
+IQR_value <- IQR(speed_data$Speed.Limit)
+
+# Removing rows where Speed Limit is an outlier (below Q1 - 1.5*IQR or above Q3 + 1.5*IQR)
+speed_data <- numeric_data %>%
+  filter(Speed.Limit >= (Q1 - 1.5 * IQR_value) & Speed.Limit<= (Q3 + 1.5 * IQR_value))
+
+```
+
+Bar Chart for better illustration of the distribution.
+
+```{r Bar plot of speed limmit }
+ggplot(speed_data, aes(x = factor(Speed.Limit), y = Accident_count)) +
+  geom_bar(stat = "identity", fill = "#f50a0a" , color = 'black') +
+  labs(title = "Accident Count by Speed Limit",
+       x = "Speed Limit",
+       y = "Accident Count") + 
+  theme_minimal() +
+ 
+  theme(
+         plot.title = element_text(hjust = 0.5, size = 16, face = "bold", margin = margin(b = 20)),
+    axis.title.x = element_text(size = 12, margin = margin(t = 20)),
+    axis.title.y = element_text(size = 12, margin = margin(r = 20)),
+
+  ) 
+
+```
+
+To explore the relationship between speed limit and accident count, along with other variables involved, the following test has been conducted: The Spearman correlation coefficient was calculated between the Accident_count and Speed Limit variables. This test measures the strength and direction of a monotonic relationship between the two variables.
+
+Null Hypothesis (H₀): There is no monotonic relationship between accident count and speed limit (ρ = 0).
+Alternative Hypothesis (H₁): There is a monotonic relationship between accident count and speed limit (ρ ≠ 0).
+
+```{r Spearman correlation }
+cor(speed_data$Accident_count, speed_data$Speed.Limit ,method = "spearman")
+
+cor.test(speed_data$Accident_count, speed_data$Speed.Limit  ,method = "spearman")
+```
+The result showed a Spearman correlation of -0.5294118, indicating a moderate negative relationship between the two variables. The p-value of 0.03728 is less than 0.05, leading us to reject the null hypothesis and conclude that there is a statistically significant negative correlation between Accident_count and Speed Limit.
+
+
+
+The following chunks groups the data by Vehicale make and calculates the accident count ,  The top 10 makes were identified by their proportion of accidents, and their distribution was presented in a horizontal bar chart, which showed the relative contributions of each make.
+
+```{r Vehicle make }
+# Count accidents by vehicle make
+accident_counts <- Data %>%
+  group_by(Vehicle.Make) %>%
+  summarise(accident_count = n())
+accident_counts
+```
+
+```{r Bar chart of vehicle makes}
+# Calculate proportion of accidents by vehicle make
+data_p <- accident_counts %>%
+  mutate(proportion_of_accidents = accident_count / sum(accident_count))
+
+# Filter, group by vehicle make, and count occurrences
+top_vehicle_makes <- data_p %>%
+  filter(Vehicle.Make != "UNKNOWN") %>% # Exclude "UNKNOWN"
+  arrange(desc(accident_count)) %>% # Arrange in descending order
+  slice(1:10) # Select the top 10 makes by accident count
+
+# Plot proportions as a bar chart
+ggplot(top_vehicle_makes, aes(x = reorder(Vehicle.Make, -proportion_of_accidents), 
+                              y = proportion_of_accidents)) +
+  geom_bar(stat = "identity", fill = "#307dc9", color = "black") +
+  labs(title = "Accident Proportions by Vehicle Make",
+       x = "Vehicle Make",
+       y = "Proportion of Total Accidents") +
+  
+  theme_minimal() + # Ensure legibility
+   theme(
+    axis.text.y = element_text(size = 11),
+    axis.title.x = element_text(size = 13, margin = margin(t = 10)),
+    axis.title.y = element_text(size = 13, margin = margin(r = 10)),
+    plot.title = element_text(size = 15, margin = margin(r = 15), hjust = 0.5)
+  ) +
+  coord_flip()
+```
+
+the following code explores Driver distraction groups were  by filtering out non-informative categories, such as "Not Distracted" and "Other." A horizontal bar chart illustrated the remaining distraction types, ordered by their occurrence.
+
+```{r Bar chart for Distraction Groups }
+filtered_data <- Data %>%
+  filter(!Distraction.Group %in% c( "Not Distracted"   , "Other" ))  # Excluding these groups
+
+Data$Distraction.Group <- fct_infreq(Data$Distraction.Group )  # Automatically orders by frequency 
+
+# Create a horizontal bar plot
+ggplot(filtered_data, aes(x = Distraction.Group)) +
+  geom_bar(fill =  "#f50a0a", color = "black") +
+  labs(title = "Distribution of Driver Distraction Groups",
+       x = "Distraction Group", y = "Count") +
+  theme_minimal() +
+  theme(
+    axis.text.y = element_text(size = 12),
+    axis.title.x = element_text(size = 12, margin = margin(t = 10)),
+    axis.title.y = element_text(size = 13, margin = margin(r = 10)),
+    plot.title = element_text(size = 14)
+  ) +
+  coord_flip()
+
+
+```
+
+
+The following plot shows the distribution of accidents under different surface conditions and weather conditions.
+
+```{r Weather bar chart }
+# Count the number of accidents per weather condition
+weather_data <- Data %>%
+  group_by(Weather) %>%
+  summarise(Accident_Count = n()) %>%
+  arrange(desc(Accident_Count))  # Optional: Sort by descending counts
+
+# Create a bar plot
+ggplot(weather_data, aes(x = reorder(Weather, -Accident_Count), y = Accident_Count)) +
+  geom_bar(stat = "identity", fill = "#f50a0a", color = "black") +
+  labs(
+    title = "Count of Accidents by Weather Condition",
+    x = "Weather Condition",
+    y = "Number of Accidents"
+  ) +
+  theme_minimal() +
+  
+   theme( axis.text.y = element_text(size = 11),
+    axis.title.x = element_text(size = 13, margin = margin(t = 10)),
+    axis.title.y = element_text(size = 13, margin = margin(r = 10)),
+    plot.title = element_text(size = 15, margin = margin(r = 15), hjust = 0.5)
+    
+  
+  )
+```
+
+
+```{r Surface condition bar chart }
+# Count the number of accidents per surface condition
+surface_condition_data <- Data %>%
+  count(Surface_condition_grouped, name = "Accident_Count") %>%
+  arrange(desc(Accident_Count))  # Optional: Sort by count
+
+# Bar plot of surface conditions
+ggplot(surface_condition_data, aes(x = reorder(Surface_condition_grouped, -Accident_Count), y = Accident_Count)) +
+  geom_bar(stat = "identity", fill = "#f50a0a", color = "black") +
+  labs(title = "Count of Accidents by Surface Condition",
+       x = "Surface Condition", 
+       y = "Number of Accidents") + theme_minimal() +
+  theme(
+    axis.text.y = element_text(size = 12),
+    axis.title.x = element_text(size = 12, margin = margin(t = 10)),
+    axis.title.y = element_text(size = 13, margin = margin(r = 10)),
+    plot.title = element_text(size = 14)
+
+  ) 
+```
+
