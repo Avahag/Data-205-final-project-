@@ -1,0 +1,138 @@
+---
+title: "AccidentRate.p2"
+format: html
+editor: visual
+---
+
+```{r}
+setwd("C:/Users/ava/Downloads/Data 205/final project")
+
+
+```
+
+```{r}
+
+Df2 <-read.csv("CrashReporting2.csv")
+Df3 <-read.csv("Montgomery_VMT.csv")
+```
+
+
+```{r}
+library(dplyr)
+library(lubridate)
+```
+```{r}
+montgomery_data <- Df3 %>%
+  filter(County.Name == "MONTGOMERY")
+
+```
+
+
+```{r}
+Df2$CrashDate <- mdy(Df2$CrashDate)
+```
+
+
+
+```{r}
+crash_data <- Df2 %>%
+  mutate(year = year(CrashDate)) %>%  
+  filter(year >= 2014 & year <= 2022)
+```
+
+```{r}
+count_by_year <- crash_data %>%
+  group_by(year) %>%  # Group by year
+  summarise(accident_count = n()) 
+```
+
+```{r}
+count_by_year
+```
+
+```{r}
+Df3 <- Df3 %>%
+  mutate(
+    vmt_2014 = AADT.2014 * GIS.Shape.Length / 5280,
+    vmt_2015 = AADT.2015 * GIS.Shape.Length / 5280,
+    vmt_2016 = AADT.2016 * GIS.Shape.Length / 5280,
+    vmt_2017 = AADT.2017 * GIS.Shape.Length / 5280,
+    vmt_2018 = AADT.2018 * GIS.Shape.Length / 5280,
+    vmt_2019 = AADT.2019 * GIS.Shape.Length / 5280,
+    vmt_2020 = AADT.2020 * GIS.Shape.Length / 5280,
+    vmt_2021 = AADT.2021 * GIS.Shape.Length / 5280,
+    Vmt_2022 = AADT.2022 * GIS.Shape.Length / 5280,
+  )
+
+```
+
+
+
+```{r}
+Df3 <- Df3 %>%
+  mutate_at(vars(63:71), ~replace(., is.na(.), 0))
+
+```
+
+
+
+
+
+```{r accident rates }
+# accident year for 2015 with accident count of 10791	
+
+accident_rate_2015 <- 10791/sum(Df3$vmt_2015) * 1e5
+
+accident_rate_2016 <- 11557/sum(Df3$vmt_2016) * 1e5
+
+accident_rate_2017 <- 11541/sum(Df3$vmt_2017) * 1e5
+
+accident_rate_2018 <- 11312	/sum(Df3$vmt_2018) * 1e5
+
+accident_rate_2019 <- 11141	/sum(Df3$vmt_2019) * 1e5
+
+accident_rate_2020 <- 7591	/sum(Df3$vmt_2020) * 1e5
+
+accident_rate_2021 <- 8850	/sum(Df3$vmt_2021) * 1e5
+
+accident_rate_2022 <- 9533	/sum(Df3$Vmt_2022) * 1e5
+
+
+```
+
+
+```{r}
+accident_rate_table <- data.frame(
+  Year = 2015:2022,
+  Accident_Rate = c(
+    accident_rate_2015,
+    accident_rate_2016,
+    accident_rate_2017,
+    accident_rate_2018,
+    accident_rate_2019,
+    accident_rate_2020,
+    accident_rate_2021,
+    accident_rate_2022
+  )
+)
+
+
+print(accident_rate_table) 
+```
+
+```{r bar chart for accident trend }
+
+ggplot(accident_rate_table, aes(x = factor(Year), y = Accident_Rate)) +
+  geom_bar(stat = "identity", fill = "#027bbf", alpha = 0.6 , width = 0.4) +  
+  geom_line(group = 1, color = "#ff0000", size = 1) +  
+  geom_point(color = "#ff1e00", size = 3) +  
+  labs(
+    title = "Accident Rate by Year",
+    x = "Year",
+    y = "Accident Rate (per 100,000 miles)"
+  ) +
+  theme_minimal() +  scale_y_continuous(limits = c(0, 25), breaks = seq(0, 25, by = 10))
+   
+
+```
+

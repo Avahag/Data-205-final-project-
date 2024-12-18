@@ -1,0 +1,216 @@
+---
+title: "Accident Rate"
+format: html
+editor: visual
+---
+
+```{r Import data }
+setwd("C:/Users/ava/Downloads/Data 205/final project/data 205 final project")
+```
+```{r}
+Data2 <-read.csv("CrashReporting2.csv")
+```
+
+```{r}
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+library(zoo)
+library(hrbrthemes)
+```
+```{r date varible converted }
+# converting date variable
+Data2$CrashDate <- mdy(Data2$CrashDate)
+```
+
+
+```{r count crashes }
+
+# Group the crash report Data by Year 
+# Count crashes by year
+crash_counts_by_year <- Data2%>%
+  group_by(year(CrashDate)) %>%
+  summarise(Crash.Count = n())  # 'n()' counts the number of rows for each year 
+
+
+```
+
+
+```{r groupnig the crash data}
+
+# Sort the data by year
+crash_counts_by_year <- crash_counts_by_year %>%
+  arrange(`year(CrashDate)`)
+
+```
+
+```{r rolling average for crash data }
+# Calculate 3-year rolling average using the 'rollmean' function from 'zoo'
+crash_counts_by_year$Rolling_Avg <- rollmean(crash_counts_by_year$Crash.Count, 
+                                              k = 5,    # Window size (3 years)
+                                              fill = NA, # Fill NA for edges where the window is incomplete
+                                              align = "center") # Center the window
+#crash_counts_by_year$Rolling_Avg[1:3] <- NA
+
+```
+
+
+```{r}
+crash_counts_by_year
+```
+
+
+
+
+```{r}
+ggplot(crash_counts_by_year, aes(x = `year(CrashDate)`)) +
+  # Plot Crash Count line and points (blue solid line)
+  geom_line(aes(y = Crash.Count, color = "Crash Count"), size = 1.2, linetype = "dashed") +  # Crash count line
+  geom_point(aes(y = Crash.Count, color = "Crash Count"), size = 3) +  # Points for Crash count
+  
+  # Plot Rolling Average line and points
+  geom_line(aes(y = Rolling_Avg, color = "Trend Line"), size = 1.2) +  # Rolling average line
+  geom_point(aes(y = Rolling_Avg, color = "Trend Line"), size = 3) +  # Points for Rolling average
+  
+  # Add labels and customize the plot
+  labs(title = "Montgomery County Crash Trends(2015-2022)", 
+       x = "Year", 
+       y = "Count", 
+       color = "Legend") +  # Legend title
+  
+  scale_x_continuous(limits = c(2017, 2022), breaks = seq(2017, 2022, by = 1)) +  # Custom X-axis ticks
+  
+  scale_y_continuous(limits = c(5000, 13000)) +
+  
+  scale_color_manual(values = c("Crash Count" = "#027bbf", "Trend Line" = "#ff0000")) +
+
+  theme_minimal() +
+  
+  # Customize plot setting and size 
+theme(
+  plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),  
+  axis.title.x = element_text(margin = margin(t = 10)), 
+  axis.title.y = element_text(margin = margin(r = 10))  
+)
+
+```
+```{r}
+
+# Calculate 3-year rolling average using the 'rollmean' function from 'zoo'
+crash_counts_by_year$Rolling_Avg <- rollmean(crash_counts_by_year$Crash.Count, 
+                                              k = 5,    # Window size (3 years)
+                                              fill = NA, # Fill NA for edges where the window is incomplete
+                                              align = "center") # Center the window
+#crash_counts_by_year$Rolling_Avg[1:3] <- NA
+
+```
+```{r}
+crash_counts_by_year
+```
+
+
+```{r}
+
+data <- data.frame(
+  Year = 2015:2024,
+  Rolling_Avg = c(NA, NA, NA, NA, 11268.4, 10628.4, 9689, 9285.4, 9056, NA),
+  Rolling_Percent = c(NA, NA, NA, NA, 100, 94.3, 86, 82.4, 80.3, NA) # Percentages of baseline
+) 
+
+
+# Define the scale factor to align axes
+scale_factor <- max(data$Rolling_Avg, na.rm = TRUE) / max(data$Rolling_Percent, na.rm = TRUE)
+
+# Visualization
+library(ggplot2)
+
+ggplot(data, aes(x = Year)) +
+  # Rolling Average Counts as Line
+  geom_line(aes(y = Rolling_Avg), color = "#1f78b4", size = 1.2) +
+  
+  # Rolling Percentage as Line
+  geom_line(aes(y = Rolling_Percent * scale_factor), color = "#ff0000", size = 1, linetype = "dashed") +
+  
+  # Points for Rolling Percentage
+  geom_point(aes(y = Rolling_Percent * scale_factor), color = "#ff0000", size = 2) +
+  
+  # Labels for Rolling Percentage Points
+  geom_text(aes(y = Rolling_Percent * scale_factor, label = round(Rolling_Percent, 1)), 
+            vjust = -1, size = 3, color = "#000000") +
+  
+  # Primary Y-Axis for Rolling Average Counts
+  scale_y_continuous(
+    name = "Rolling Average (Counts)", 
+    sec.axis = sec_axis(~./scale_factor, name = "Rolling Average (%)") # Secondary Y-Axis for Percentages
+  ) +
+    
+  scale_x_continuous(limits = c(2019, 2023), breaks = seq(2019, 2023, by = 1)) +  # Custom X-axis ticks
+  
+  # Titles and Labels
+  labs(
+    title = "Crash Trends: Rolling Average (Counts) and Percentages",
+    x = "Year",
+    y = "Rolling Average (Counts)"
+  ) +
+  
+  # Theme Adjustments
+  theme_minimal()
+
+```
+
+
+```{r}
+# Example Data
+data <- data.frame(
+  Year = 2015:2024,
+  Crash_Count = c(10791, 11557, 11541, 11312, 11141, 7591, 8850, 9533, 10165, 4991),
+  Rolling_Percent = c(NA, NA, NA, NA, 100, 94.3, 86, 82.4, 80.3, NA) # Percentage of baseline year (2019)
+)
+
+# Define the scale factor to align axes
+scale_factor <- max(data$Crash_Count, na.rm = TRUE) / max(data$Rolling_Percent, na.rm = TRUE)
+
+
+
+ggplot(data, aes(x = Year)) +
+  # Crash Count as Bars
+  geom_col(aes(y = Crash_Count), fill = "#723cc9", alpha = 0.7, width = 0.7) +
+  
+  # Rolling Percentage as Line
+  geom_line(aes(y = Rolling_Percent * scale_factor), color = "#fa2335", size = 1.2) +
+  
+  # Points for Rolling Percentage
+  geom_point(aes(y = Rolling_Percent * scale_factor), color = "#fa2335", size = 3) +
+  
+   geom_text(aes(y = Rolling_Percent * scale_factor, 
+                label = paste0(round(Rolling_Percent, 1), "%")), 
+            vjust = -1, size = 3, color = "#000000") +
+  
+  # Primary Y-Axis for Crash Counts
+  scale_y_continuous(
+    name = "Crash Count", 
+    limits = c(0, max(data$Crash_Count, na.rm = TRUE) * 1.1),
+    sec.axis = sec_axis(~./scale_factor, name = "Rolling Average (%)") # Secondary Y-Axis for Percentages
+  ) +
+   scale_x_continuous(limits = c(2018, 2024), breaks = seq(2018, 2024, by = 1)) +  # Custom X-axis ticks
+  
+  
+  # Titles and Labels
+  labs(
+    title = "Crash Trends: Rolling Average By Year",
+    x = "Year",
+    y = "Crash Count"
+  ) +
+  
+  # Theme Adjustments
+  theme_minimal() + 
+  theme(
+  plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),  
+  axis.title.x = element_text(margin = margin(t = 10)), 
+  axis.title.y = element_text(margin = margin(r = 10))  
+)
+
+```
+
+
+
