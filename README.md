@@ -14,7 +14,7 @@ Identify contributing factors such as weather conditions, vehicle types, surface
 Analyze accident patterns and visualize accident hotspots using choropleth and kernel density maps created in ArcGIS Pro.
 Provide insights for infrastructure improvements and policy recommendations to reduce accidents.
 Methodology
-## Data Cleaning:
+## Data Cleaning
 
 Grouped variables (e.g., driver distractions, weather conditions) into more manageable categories for better analysis.
 One-hot encoding for vehicle types (EV vs. non-EV).
