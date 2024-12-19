@@ -1,5 +1,5 @@
 # Accident Rate and Contributing Factors
-Overview
+## Overview
 This project investigates the relationship between various traffic and environmental factors and accident rates in Montgomery County, Maryland. By analyzing accident data, traffic volumes, and infrastructure factors, the project aims to identify trends, patterns, and areas needing improvement to enhance road safety.
 
 ## Datasets
@@ -8,10 +8,11 @@ Contains 36 variables related to accidents.
 Variables include vehicle year, make, and model, surface conditions, weather, time of day, accident location, and more.
 2. MDOT SHA Annual Average Daily Traffic (AADT) Data
 Contains traffic volume information used for calculations of Vehicle Miles Traveled (VMT).
-## Objectives
+
+## Goals
 Examine accident trends over time in Montgomery County (2015–2024).
 Identify contributing factors such as weather conditions, vehicle types, surface conditions, and time of day.
-Analyze accident patterns and visualize accident hotspots using choropleth and kernel density maps created in ArcGIS Pro.
+Analyze accident patterns and visualize accident hotspots using bivariate map and point density map.
 Provide insights for infrastructure improvements and policy recommendations to reduce accidents.
 Methodology
 ## Data Cleaning
@@ -45,7 +46,6 @@ Spearman’s Correlation:
 
 A weak negative correlation (-0.115) between accident count and speed limit was found, but it was not statistically significant.
 Impact of Vehicle Type:
-
 Non-EVs are more likely to be involved in minor and non-injury accidents, with significant p-values for minor injuries and no injuries (e.g., p = 9.36e-08 for no injury).
 Factors Affecting Accident Count:
 
@@ -66,6 +66,6 @@ This project highlights the importance of comprehensive traffic data analysis fo
 ## Running the Code
 This project was implemented using R for statistical analysis and ArcGIS Pro for geospatial analysis.
 
-# Dependencies:
+## Dependencies:
 R packages: dplyr, ggplot2, tidyverse, sf, lmtest, etc.
 To run the project, ensure you have the required libraries and datasets, and execute the R scripts to analyze the data, followed by visualizing results through ArcGIS Pro.
