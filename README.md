@@ -1,7 +1,6 @@
 # Accident Rate and Contributing Factors
 ## Overview
-This project investigates the relationship between various traffic and environmental factors and accident rates in Montgomery County, Maryland. By analyzing accident data, traffic volumes, and infrastructure factors, the project aims to identify trends, patterns, and areas needing improvement to enhance road safety.
-
+his project focuses on analyzing the accident rate in Montgomery County, Maryland, and uncovering patterns in accident counts. By examining trends and contributing factors, it aims to provide insights that can guide improvements in road safety and transportation policies. The analysis is based on the Montgomery County Crash Report dataset, which contains detailed information on various factors such as vehicle types, road conditions, lighting, weather, and accident severity. The findings from this project can help identify high-risk areas, understand relationships between environmental and traffic factors, and prioritize interventions to reduce accidents and improve safety for all road users.
 ## Datasets
 1. Montgomery County Crash Report Data
 Contains 36 variables related to accidents.
