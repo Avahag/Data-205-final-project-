@@ -67,4 +67,5 @@ This project was implemented using R for statistical analysis and ArcGIS Pro for
 
 ## Dependencies:
 R packages: dplyr, ggplot2, tidyverse, sf, lmtest, etc.
+
 To run the project, ensure you have the required libraries and datasets, and execute the R scripts to analyze the data, followed by visualizing results through ArcGIS Pro.
